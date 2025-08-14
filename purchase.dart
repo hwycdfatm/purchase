@@ -204,3 +204,6 @@ int _index = 0;
 
 
   // gọi hàm buyProduct để mua sản phẩm
+
+// dùng   _iap.restorePurchases(); để khôi phục
+
