@@ -129,3 +129,78 @@ void listenToPurchaseUpdates() {
     cancelOnError: true,
   );
 }
+
+void buyProduct(ProductDetails product) async {
+  final PurchaseParam purchaseParam = PurchaseParam(productDetails: product);
+
+  logDev('Mua sản phẩm: ${product.title}');
+
+  if (Platform.isAndroid) {
+    _iap.buyNonConsumable(
+      purchaseParam: purchaseParam,
+    );
+  } else {
+    _iap.buyConsumable(
+      purchaseParam: purchaseParam,
+    ); // Hoặc buyConsumable()
+  }
+}
+
+Future<void> getProducts() async {
+  final bool available = await _iap.isAvailable();
+  if (!available) return;
+
+  const Set<String> kIds = {'mã product 1', 'mã product 2', 'mã product 3'};
+  const Set<String> aIds = {'mã product 1', 'mã product 2', 'mã product 3'};
+  final ProductDetailsResponse response =
+      await _iap.queryProductDetails(Platform.isIOS ? kIds : aIds);
+
+  for (var product in response.productDetails) {
+    logDev('Sản phẩm: ${product.title} - ${product.price}');
+  }
+
+  // logDev('Lỗi: ${response.error}');
+
+  // logDev('Not found: ${response.notFoundIDs}');
+
+  if (response.error != null) {
+    return;
+  }
+
+  final List<ProductDetails> products = response.productDetails;
+
+  products.sort((a, b) => a.rawPrice.compareTo(b.rawPrice));
+  // Hiển thị danh sách sản phẩm
+  if (!mounted) return;
+  setState(() {
+    listVip = products;
+    isLoading = false;
+  });
+}
+
+void checkPendingPurchases() async {
+  final Stream<List<PurchaseDetails>> purchaseStream = _iap.purchaseStream;
+  purchaseStream.listen((List<PurchaseDetails> purchases) {
+    for (var purchase in purchases) {
+      if (purchase.pendingCompletePurchase) {
+        _iap.completePurchase(purchase);
+      }
+    }
+  });
+}
+
+void initState() {
+  super.initState();
+
+  getProducts();
+
+  checkPendingPurchases();
+
+  listenToPurchaseUpdates();
+}
+
+int _index = 0;
+
+
+
+  // gọi hàm buyProduct để mua sản phẩm
